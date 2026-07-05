@@ -52,7 +52,34 @@ To explore interactively, open `notebooks/hghmnds_analysis.ipynb`.
 
 ## Key Findings
 
-_TBD — filled in after EDA._
+- **Shopee lists at a premium but its sales-volume data is unusable.** Shopee's
+  median price (PHP 620) beats Lazada's (PHP 500), and Shopee products carry far
+  more reviews (1,431 vs 381) and a higher average rating (4.88 vs 4.40). However
+  `sold_final` is 0 across every Shopee listing — confirmed to be a genuine
+  platform limitation (Shopee's public search API no longer exposes real sold
+  counts, even in successful responses where other fields like `rating_avg` and
+  `review_count` are correctly populated and varied), not a scraping bug. Only
+  Lazada's `sold_lifetime` figures are usable for sales-volume analysis this run;
+  `review_count`/`rating_avg` stand in as the engagement proxy for Shopee.
+- **Lazada carries far more knockoff risk.** ~41% of Lazada listings are flagged
+  `is_suspicious` (discount > 80% or price under ₱250 — fake "original prices"
+  like ₱7,777 discounted to ₱199), versus ~10% on Shopee.
+- **"Other" is the largest category on both platforms** (53 Shopee, 49 Lazada)
+  because many product names (e.g. "AURORA - HGHMNDS", "HGHMNDS - DIAGRAM") don't
+  contain an explicit garment-type keyword — the classifier only matches literal
+  keywords (shirt/tee/hoodie/etc.), so abstractly-named products fall through.
+  Known limitation of this pipeline's simple keyword-based category rules.
+- **`is_authentic` is true for virtually all 221 listings** since it only checks
+  whether the product name mentions HGHMNDS/HIGHMINDS/HIGH MINDS — it doesn't by
+  itself separate the official store from resellers or knockoffs (`is_suspicious`
+  handles that).
+- **Ratings barely correlate with review volume** (Pearson r ≈ 0.19–0.20 on both
+  platforms) — popular items aren't systematically rated higher or lower than
+  niche ones.
+- **Reviews mix English and Filipino.** Word-frequency analysis on 1-star reviews
+  is dominated by Filipino function words (ng, sa, na, mga) since the stopword
+  list is English-only — negative reviews skew more Filipino-language than
+  5-star reviews. A bilingual stopword list would sharpen this analysis further.
 
 ## Author
 
