@@ -1,0 +1,8 @@
+pandas
+openpyxl
+matplotlib
+seaborn
+numpy
+jupyter
+nbconvert
+pytest
