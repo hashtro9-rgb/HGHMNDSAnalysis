@@ -1,0 +1,58 @@
+[
+  {
+    "category": "Accessories",
+    "count": 4,
+    "avg_price": 812.5,
+    "avg_rating": null,
+    "total_sold": 1087
+  },
+  {
+    "category": "Headwear",
+    "count": 2,
+    "avg_price": 161.5,
+    "avg_rating": 4.81,
+    "total_sold": 0
+  },
+  {
+    "category": "Hoodie/Sweatshirt",
+    "count": 3,
+    "avg_price": 1833.33,
+    "avg_rating": 4.99,
+    "total_sold": 26
+  },
+  {
+    "category": "Jersey",
+    "count": 5,
+    "avg_price": 988.0,
+    "avg_rating": null,
+    "total_sold": 8
+  },
+  {
+    "category": "Longsleeves",
+    "count": 7,
+    "avg_price": 702.14,
+    "avg_rating": 4.9,
+    "total_sold": 396
+  },
+  {
+    "category": "Other",
+    "count": 102,
+    "avg_price": 627.9,
+    "avg_rating": 4.84,
+    "total_sold": 35542
+  },
+  {
+    "category": "T-Shirt",
+    "count": 97,
+    "avg_price": 437.29,
+    "avg_rating": 4.67,
+    "total_sold": 4840
+  },
+  {
+    "category": "Tanktop",
+    "count": 1,
+    "avg_price": 800.0,
+    "avg_rating": null,
+    "total_sold": 7
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "total_products": 221,
+  "shopee_count": 118,
+  "lazada_count": 103,
+  "avg_price_shopee": 566.09,
+  "avg_price_lazada": 576.63,
+  "total_reviews": 1812,
+  "avg_rating_shopee": 4.88,
+  "avg_rating_lazada": 4.39,
+  "total_sold": 41906,
+  "top_category": "Other",
+  "top_seller_shopee": "HGHMNDS ONLINE - AURORA TEE",
+  "top_seller_lazada": "AURORA - HGHMNDS",
+  "suspicious_count": 54,
+  "scraped_at": "2026-07-05"
+}
