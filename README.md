@@ -50,6 +50,12 @@ python scripts/03_export_json.py  # dashboard JSON -> assets/data/
 
 To explore interactively, open `notebooks/hghmnds_analysis.ipynb`.
 
+**Note on CI**: `data/raw/*.xlsx` is git-ignored (raw scrape data stays local),
+so `.github/workflows/deploy.yml` only runs `02_eda.py` and `03_export_json.py`
+against the committed `data/cleaned/*.csv` — it does not rerun `01_clean.py`.
+Whenever new raw data is scraped, run `01_clean.py` locally and commit the
+refreshed `data/cleaned/` files so CI has something current to build from.
+
 ## Key Findings
 
 - **Shopee lists at a premium but its sales-volume data is unusable.** Shopee's

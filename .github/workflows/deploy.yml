@@ -20,9 +20,11 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements.txt
 
-      - name: Run cleaning pipeline
-        run: python scripts/01_clean.py
-
+      # scripts/01_clean.py is NOT run here: it reads data/raw/*.xlsx, which is
+      # git-ignored (raw scrape data stays local, per project convention). CI
+      # regenerates charts/JSON from the already-committed data/cleaned/*.csv.
+      # Run 01_clean.py locally and commit the refreshed data/cleaned/ files
+      # whenever new raw data is scraped.
       - name: Run EDA
         run: python scripts/02_eda.py
 
