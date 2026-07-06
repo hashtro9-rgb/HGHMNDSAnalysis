@@ -1,0 +1,9 @@
+{
+  "generated_at": null,
+  "previous_file": null,
+  "new_products": [],
+  "disappeared_products": [],
+  "price_changes": [],
+  "rating_changes": [],
+  "note": "No weekly_diff_*.json found in data/raw/ yet -- run scripts/01_scrape.py to generate one."
+}

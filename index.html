@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HGHMNDS Market Intelligence</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================= SIDEBAR ============================= -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <!-- HGHMNDS inline SVG wordmark logo -->
+      <svg viewBox="0 0 188 30" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HGHMNDS">
+        <rect x="0" y="4" width="6" height="22" fill="#388bfd" />
+        <text x="14" y="22" font-family="Inter, sans-serif" font-size="20"
+              font-weight="700" letter-spacing="1.5" fill="#e6edf3">HGHMNDS</text>
+      </svg>
+      <div class="brand-sub">Market Intelligence</div>
+    </div>
+
+    <div class="sidebar-section-label">Analytics</div>
+    <nav>
+      <a class="nav-item active" data-tab="overview"><span class="nav-icon">⬛</span> Overview</a>
+      <a class="nav-item" data-tab="sales"><span class="nav-icon">📈</span> Sales</a>
+      <a class="nav-item" data-tab="pricing"><span class="nav-icon">💰</span> Pricing</a>
+      <a class="nav-item" data-tab="reviews"><span class="nav-icon">⭐</span> Reviews</a>
+      <a class="nav-item" data-tab="recommendations"><span class="nav-icon">🎯</span> Recommendations</a>
+    </nav>
+
+    <div class="sidebar-section-label">Explorer</div>
+    <nav>
+      <a class="nav-item" data-tab="products"><span class="nav-icon">🗂</span> Products</a>
+      <a class="nav-item" data-tab="about"><span class="nav-icon">ℹ</span> About</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="live-indicator"><span class="live-dot"></span> LIVE DATA</div>
+      <div id="last-updated" style="margin-top:6px"></div>
+    </div>
+  </aside>
+
+  <!-- ============================ WORKSPACE =========================== -->
+  <div class="workspace">
+
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Overview — Command Center</div>
+      <div class="topbar-meta">
+        <span class="topbar-badge" id="topbar-platform">All Platforms</span>
+        <span class="topbar-badge" id="topbar-products"></span>
+        <span class="topbar-badge" id="topbar-updated"></span>
+      </div>
+    </div>
+
+    <div class="ticker-wrap">
+      <div class="ticker-inner" id="ticker"></div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============================ OVERVIEW ========================== -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="kpi-card" id="kpi-products"></div>
+        <div class="kpi-card" id="kpi-sold"></div>
+        <div class="kpi-card" id="kpi-revenue-est"></div>
+        <div class="kpi-card" id="kpi-rating"></div>
+        <div class="kpi-card" id="kpi-reviews"></div>
+        <div class="kpi-card" id="kpi-weekly-change"></div>
+        <div class="chart-card" id="card-platform-compare"></div>
+        <div class="chart-card" id="card-top-products"></div>
+        <div class="chart-card" id="card-category-mix"></div>
+        <div class="chart-card" id="card-change-log"></div>
+      </div>
+
+      <!-- ============================= SALES =========================== -->
+      <div class="tab-panel" id="tab-sales">
+        <div class="kpi-card" id="kpi-total-sold"></div>
+        <div class="kpi-card" id="kpi-top-product"></div>
+        <div class="kpi-card" id="kpi-top-category"></div>
+        <div class="kpi-card" id="kpi-shopee-sold"></div>
+        <div class="kpi-card" id="kpi-lazada-sold"></div>
+        <div class="chart-card" id="card-bestsellers"></div>
+        <div class="chart-card" id="card-sales-category"></div>
+        <div class="chart-card" id="card-price-vs-sales"></div>
+        <div class="chart-card" id="card-sellthrough"></div>
+      </div>
+
+      <!-- ============================ PRICING ========================== -->
+      <div class="tab-panel" id="tab-pricing">
+        <div class="kpi-card" id="kpi-avg-price"></div>
+        <div class="kpi-card" id="kpi-price-range"></div>
+        <div class="kpi-card" id="kpi-avg-discount"></div>
+        <div class="kpi-card" id="kpi-price-elasticity"></div>
+        <div class="kpi-card" id="kpi-on-sale"></div>
+        <div class="chart-card" id="card-price-dist"></div>
+        <div class="chart-card" id="card-price-category"></div>
+        <div class="chart-card" id="card-discount-analysis"></div>
+        <div class="chart-card" id="card-platform-price"></div>
+        <div class="chart-card" id="card-data-quality"></div>
+      </div>
+
+      <!-- ============================ REVIEWS ========================== -->
+      <div class="tab-panel" id="tab-reviews">
+        <div class="kpi-card" id="kpi-total-reviews"></div>
+        <div class="kpi-card" id="kpi-avg-rating"></div>
+        <div class="kpi-card" id="kpi-sentiment"></div>
+        <div class="kpi-card" id="kpi-5star-pct"></div>
+        <div class="kpi-card" id="kpi-substantive"></div>
+        <div class="chart-card" id="card-rating-breakdown"></div>
+        <div class="chart-card" id="card-keywords-positive"></div>
+        <div class="chart-card" id="card-keywords-negative"></div>
+        <div class="chart-card" id="card-review-samples"></div>
+      </div>
+
+      <!-- ======================= RECOMMENDATIONS ======================= -->
+      <div class="tab-panel" id="tab-recommendations">
+        <div class="kpi-card" id="card-rec-score1"></div>
+        <div class="kpi-card" id="card-rec-score2"></div>
+        <div class="kpi-card" id="card-rec-score3"></div>
+        <div class="chart-card" id="card-rec-list"></div>
+      </div>
+
+      <!-- ============================ PRODUCTS ========================= -->
+      <div class="tab-panel" id="tab-products">
+        <div class="filter-bar" id="filter-bar"></div>
+        <div class="chart-card" id="card-products-table"></div>
+      </div>
+
+      <!-- ============================= ABOUT =========================== -->
+      <div class="tab-panel" id="tab-about">
+        <div class="chart-card" id="card-about-left"></div>
+        <div class="chart-card" id="card-about-right"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /workspace -->
+</div><!-- /app -->
+
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="drawer" id="product-drawer">
+  <button class="drawer-close" id="drawer-close">✕</button>
+  <div id="drawer-content"></div>
+</aside>
+
+<script src="script.js"></script>
+</body>
+</html>
