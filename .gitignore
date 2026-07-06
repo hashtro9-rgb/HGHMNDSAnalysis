@@ -8,3 +8,4 @@ node_modules/
 *.log
 data/raw/*.xlsx
 data/raw/*.csv
+dashboard/assets/

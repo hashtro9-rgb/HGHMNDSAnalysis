@@ -1,16 +1,21 @@
-"""Export cleaned data as JSON for the dashboard -> assets/data/*.json"""
+"""04_export_json.py - export cleaned data as JSON for the dashboard -> assets/data/*.json"""
+import glob
 import json
+import shutil
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from config import settings  # noqa: E402
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-ROOT = Path(__file__).resolve().parent.parent
-CLEANED_DIR = ROOT / "data" / "cleaned"
-JSON_DIR = ROOT / "assets" / "data"
+CLEANED_DIR = ROOT / settings.CLEANED_DIR
+RAW_DIR = ROOT / settings.RAW_DIR
+JSON_DIR = ROOT / settings.ASSETS_DIR
 JSON_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -69,6 +74,21 @@ top_seller_shopee = (shopee_a.sort_values("sold_final", ascending=False)
 top_seller_lazada = (lazada_a.sort_values("sold_final", ascending=False)
                      .iloc[0]["product_name_clean"] if len(lazada_a) else None)
 
+# scraped_at: pull from the Shopee_Products scraped_at column in the latest
+# raw file if available, else fall back to today's date.
+scraped_at = None
+latest_raw = RAW_DIR / "latest.xlsx"
+if latest_raw.exists():
+    try:
+        raw_sp = pd.read_excel(latest_raw, sheet_name="Shopee_Products")
+        stamp = str(raw_sp["scraped_at"].dropna().iloc[0])
+        scraped_at = f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:8]}" if len(stamp) >= 8 else stamp
+    except Exception:
+        pass
+if not scraped_at:
+    from datetime import datetime
+    scraped_at = datetime.now().strftime("%Y-%m-%d")
+
 summary = {
     "total_products": int(len(authentic)),
     "shopee_count": int(len(shopee_a)),
@@ -83,7 +103,7 @@ summary = {
     "top_seller_shopee": top_seller_shopee,
     "top_seller_lazada": top_seller_lazada,
     "suspicious_count": int(combined["is_suspicious"].sum()),
-    "scraped_at": "2026-07-05",
+    "scraped_at": scraped_at,
 }
 with open(JSON_DIR / "summary.json", "w", encoding="utf-8") as f:
     json.dump(summary, f, ensure_ascii=False, indent=2)
@@ -107,8 +127,7 @@ with open(JSON_DIR / "categories.json", "w", encoding="utf-8") as f:
 # price_ranges.json
 # ---------------------------------------------------------------------------
 bins = [0, 300, 500, 800, 1200, float("inf")]
-labels = ["Under ₱300", "₱300–₱500", "₱500–₱800",
-          "₱800–₱1200", "Above ₱1200"]
+labels = ["Under ₱300", "₱300–₱500", "₱500–₱800", "₱800–₱1200", "Above ₱1200"]
 authentic = authentic.copy()
 authentic["price_range"] = pd.cut(authentic["price"], bins=bins, labels=labels, right=False)
 range_counts = authentic["price_range"].value_counts().reindex(labels, fill_value=0)
@@ -117,9 +136,26 @@ with open(JSON_DIR / "price_ranges.json", "w", encoding="utf-8") as f:
     json.dump(price_ranges_records, f, ensure_ascii=False, indent=2)
 
 # ---------------------------------------------------------------------------
+# weekly_diff.json -- copy of the latest diff from data/raw/
+# ---------------------------------------------------------------------------
+diff_candidates = sorted(glob.glob(str(RAW_DIR / "weekly_diff_*.json")))
+if diff_candidates:
+    shutil.copy(diff_candidates[-1], JSON_DIR / "weekly_diff.json")
+else:
+    with open(JSON_DIR / "weekly_diff.json", "w", encoding="utf-8") as f:
+        json.dump({
+            "generated_at": None, "previous_file": None,
+            "new_products": [], "disappeared_products": [],
+            "price_changes": [], "rating_changes": [],
+            "note": "No weekly_diff_*.json found in data/raw/ yet -- "
+                    "run scripts/01_scrape.py to generate one.",
+        }, f, ensure_ascii=False, indent=2)
+
+# ---------------------------------------------------------------------------
 # Report file sizes
 # ---------------------------------------------------------------------------
 print("Exported JSON files:")
-for name in ["products.json", "reviews.json", "summary.json", "categories.json", "price_ranges.json"]:
+for name in ["products.json", "reviews.json", "summary.json", "categories.json",
+             "price_ranges.json", "weekly_diff.json"]:
     path = JSON_DIR / name
     print(f"  {name:20s} {path.stat().st_size:>8,d} bytes")

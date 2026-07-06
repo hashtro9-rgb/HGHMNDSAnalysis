@@ -1,16 +1,20 @@
-"""Cleaning pipeline: data/raw/*.xlsx -> data/cleaned/*.csv + hghmnds_cleaned.xlsx"""
+"""02_clean.py - data/raw/latest.xlsx -> data/cleaned/*.csv + hghmnds_cleaned.xlsx"""
 import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from config import settings  # noqa: E402
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-ROOT = Path(__file__).resolve().parent.parent
-RAW = ROOT / "data" / "raw" / "hghmnds_MERGED_20260705_022822.xlsx"
-CLEANED_DIR = ROOT / "data" / "cleaned"
+RAW = ROOT / settings.RAW_DIR / "latest.xlsx"
+CLEANED_DIR = ROOT / settings.CLEANED_DIR
 CLEANED_DIR.mkdir(parents=True, exist_ok=True)
 
 log_lines = []
@@ -27,10 +31,12 @@ CATEGORY_RULES = [
     (["HOODIE", "SWEATSHIRT", "PULLOVER"],     "Hoodie/Sweatshirt"),
     (["JERSEY"],                               "Jersey"),
     (["CAP", "HAT", "BUCKET"],                 "Headwear"),
-    (["PURSE", "FANNY", "NECKLACE", "COIN", "BAG"], "Accessories"),
+    (["SHORTS", "PANTS", "TROUSERS"],          "Bottoms"),
+    (["SHADES", "SUNGLASSES", "EYEWEAR"],      "Eyewear"),
+    (["PURSE", "FANNY", "NECKLACE", "COIN", "BAG",
+      "SOCKS", "STICKER"],                     "Accessories"),
     (["SHIRT", "TEE", "T-SHIRT", "TSHIRT"],    "T-Shirt"),
 ]
-AUTHENTIC_PATTERNS = ["HGHMNDS", "HIGHMINDS", "HIGH MINDS"]
 
 
 def derive_category(name):
@@ -40,34 +46,28 @@ def derive_category(name):
     for keywords, cat in CATEGORY_RULES:
         if any(kw in upper for kw in keywords):
             return cat
-    return "Other"
+    # Everything left is an abstractly-named product (AURORA, DIAGRAM, MANIFEST...)
+    # with no explicit garment keyword. HGHMNDS is primarily a t-shirt brand, so
+    # these are almost certainly tees rather than genuinely uncategorized items.
+    return "T-Shirt"
 
 
 def is_authentic(name):
     if not isinstance(name, str):
         return False
     upper = name.upper()
-    return any(pat in upper for pat in AUTHENTIC_PATTERNS)
+    return any(pat in upper for pat in settings.AUTHENTIC_KEYWORDS)
 
 
 def clean_name(name):
     if not isinstance(name, str):
         return name
     name = name.strip()
-    name = re.sub(r" {2,}", " ", name)
-    return name
+    return re.sub(r" {2,}", " ", name)
 
 
-# Lazada review scrape run 20260705_015629 -- used to resolve relative dates
-# like "4 weeks ago" that the review API returns instead of an absolute date.
-LAZADA_SCRAPE_DATE = datetime(2026, 7, 5)
-RELATIVE_UNITS = {
-    "day": "days", "days": "days",
-    "week": "weeks", "weeks": "weeks",
-    "month": "days", "months": "days",   # approximate: 30 days/month
-    "year": "days", "years": "days",     # approximate: 365 days/year
-    "hour": "days", "hours": "days",     # same-day, no finer resolution available
-}
+LAZADA_SCRAPE_DATE = datetime.now()
+RELATIVE_UNITS = {"day": "days", "days": "days", "week": "weeks", "weeks": "weeks"}
 
 
 def parse_lazada_date(d):
@@ -85,8 +85,7 @@ def parse_lazada_date(d):
 
     m = re.match(r"^(\d+)\s+(day|days|week|weeks|month|months|year|years|hour|hours)\s+ago$", low)
     if m:
-        n = int(m.group(1))
-        unit = m.group(2)
+        n, unit = int(m.group(1)), m.group(2)
         if unit in ("month", "months"):
             delta = timedelta(days=n * 30)
         elif unit in ("year", "years"):
@@ -107,13 +106,17 @@ def clean_review_text(text):
     if not isinstance(text, str):
         return text
     text = text.strip()
-    text = re.sub(r"\n{2,}", "\n", text)
-    return text
+    return re.sub(r"\n{2,}", "\n", text)
 
 
 # ---------------------------------------------------------------------------
 # Load
 # ---------------------------------------------------------------------------
+if not RAW.exists():
+    print(f"[!] {RAW} not found. Run scripts/01_scrape.py first (or place a "
+          f"raw xlsx at data/raw/latest.xlsx).")
+    sys.exit(1)
+
 log(f"Loading {RAW.name}...")
 sp_raw = pd.read_excel(RAW, sheet_name="Shopee_Products")
 lp_raw = pd.read_excel(RAW, sheet_name="Lazada_Products")
@@ -152,8 +155,9 @@ log("  sold_final   : copied from sold_30d, nulls -> 0")
 
 sp["review_count"] = pd.to_numeric(sp["review_count"], errors="coerce").fillna(0).astype(int)
 sp["has_ratings"] = sp["review_count"] > 0
-sp.loc[sp["review_count"] == 0, "rating_avg"] = float("nan")
-log(f"  rating_avg   : NaN where review_count == 0 ({int((~sp['has_ratings']).sum())} rows)")
+sp.loc[sp["review_count"] == 0, "rating_avg"] = np.nan
+log(f"  rating_avg   : NaN where review_count == 0 "
+    f"({int((~sp['has_ratings']).sum())} rows)")
 
 drop_cols = ["stock", "description", "variations"]
 sp = sp.drop(columns=drop_cols)
@@ -163,11 +167,10 @@ sp["product_name_clean"] = sp["product_name"].apply(clean_name)
 sp["is_authentic"] = sp["product_name_clean"].apply(is_authentic)
 sp["category_derived"] = sp["product_name_clean"].apply(derive_category)
 
-# Applied to both platforms so combined_clean / suspicious_listings.csv are
-# comparable across platforms (see 02_eda.py "SUSPICIOUS LISTINGS" section).
 sp_price = pd.to_numeric(sp["price"], errors="coerce")
 sp_disc = pd.to_numeric(sp["discount_pct"], errors="coerce").fillna(0)
-sp["is_suspicious"] = (sp_disc > 80) | (sp_price < 250)
+sp["is_suspicious"] = (sp_disc > settings.SUSPICIOUS_DISCOUNT_THRESHOLD) | \
+                      (sp_price < settings.SUSPICIOUS_PRICE_FLOOR)
 
 log(f"  is_authentic : {int(sp['is_authentic'].sum())} True / {len(sp)}")
 log(f"  is_suspicious: {int(sp['is_suspicious'].sum())} True / {len(sp)}")
@@ -187,13 +190,15 @@ log("  sold_final   : copied from sold_lifetime, nulls -> 0")
 
 lp_price = pd.to_numeric(lp["price"], errors="coerce")
 lp_disc = pd.to_numeric(lp["discount_pct"], errors="coerce").fillna(0)
-lp["is_suspicious"] = (lp_disc > 80) | (lp_price < 250)
+lp["is_suspicious"] = (lp_disc > settings.SUSPICIOUS_DISCOUNT_THRESHOLD) | \
+                      (lp_price < settings.SUSPICIOUS_PRICE_FLOOR)
 log(f"  is_suspicious: {int(lp['is_suspicious'].sum())} True / {len(lp)} "
-    f"(discount_pct>80 OR price<250)")
+    f"(discount_pct>{settings.SUSPICIOUS_DISCOUNT_THRESHOLD} OR "
+    f"price<{settings.SUSPICIOUS_PRICE_FLOOR})")
 
 lp["review_count"] = pd.to_numeric(lp["review_count"], errors="coerce")
 lp["has_ratings"] = lp["review_count"].fillna(0) > 0
-lp.loc[lp["review_count"].isna() | (lp["review_count"] == 0), "rating_avg"] = float("nan")
+lp.loc[lp["review_count"].isna() | (lp["review_count"] == 0), "rating_avg"] = np.nan
 lp["review_count"] = lp["review_count"].fillna(0).astype(int)
 log(f"  rating_avg   : NaN where review_count == 0 or null "
     f"({int((~lp['has_ratings']).sum())} rows)")
@@ -219,9 +224,10 @@ def clean_reviews(df, platform):
     if platform == "Lazada":
         df["date"] = df["date"].apply(parse_lazada_date)
     df["review_length"] = df["review_text"].fillna("").astype(str).apply(len)
-    df["is_substantive"] = df["review_length"] >= 20
+    df["is_substantive"] = df["review_length"] >= settings.MIN_REVIEW_LENGTH
     log(f"  {platform} : {len(df)} rows, "
-        f"{int(df['is_substantive'].sum())} substantive (>=20 chars)")
+        f"{int(df['is_substantive'].sum())} substantive "
+        f"(>={settings.MIN_REVIEW_LENGTH} chars)")
     return df
 
 

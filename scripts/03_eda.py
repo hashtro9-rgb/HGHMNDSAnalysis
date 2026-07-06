@@ -1,4 +1,4 @@
-"""Exploratory data analysis on data/cleaned/*.csv -> charts in assets/, tables printed."""
+"""03_eda.py - exploratory data analysis on data/cleaned/*.csv -> charts in assets/, tables printed."""
 import re
 import sys
 from collections import Counter
@@ -7,14 +7,16 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from config import settings  # noqa: E402
+
 sys.stdout.reconfigure(encoding="utf-8")
 
-ROOT = Path(__file__).resolve().parent.parent
-CLEANED_DIR = ROOT / "data" / "cleaned"
+CLEANED_DIR = ROOT / settings.CLEANED_DIR
 ASSETS_DIR = ROOT / "assets"
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -78,9 +80,6 @@ plt.close(fig)
 print(f"Saved {ASSETS_DIR / 'price_by_category.png'}")
 
 clean_mask = combined["is_authentic"] & ~combined["is_suspicious"]
-# A null discount_pct means no active promo (0% off), not "unknown" -- fill
-# so platforms with mostly non-discounted listings (e.g. Lazada) don't average
-# to NaN just because few items have an active sale.
 avg_discount = (combined.loc[clean_mask].assign(discount_pct=lambda d: d["discount_pct"].fillna(0))
                 .groupby("platform")["discount_pct"].mean().round(2))
 print("\n-- Avg discount % per platform (authentic + non-suspicious only) --")

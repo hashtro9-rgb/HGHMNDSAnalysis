@@ -23,19 +23,29 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements.txt
 
-      # scripts/01_clean.py is NOT run here: it reads data/raw/*.xlsx, which is
-      # git-ignored (raw scrape data stays local, per project convention). CI
-      # regenerates charts/JSON from the already-committed data/cleaned/*.csv.
-      # Run 01_clean.py locally and commit the refreshed data/cleaned/ files
-      # whenever new raw data is scraped.
+      # scripts/02_clean.py is NOT run here: it reads data/raw/latest.xlsx,
+      # which is git-ignored (raw scrape data stays local). CI regenerates
+      # charts/JSON from the already-committed data/cleaned/*.csv. Run
+      # 02_clean.py locally (or via weekly_pipeline.yml's full scrape) and
+      # commit the refreshed data/cleaned/ files whenever new raw data lands.
       - name: Run EDA
-        run: python scripts/02_eda.py
+        run: python scripts/03_eda.py
 
       - name: Export dashboard JSON
-        run: python scripts/03_export_json.py
+        run: python scripts/04_export_json.py
 
-      - name: Deploy assets/ to GitHub Pages
+      # script.js looks for JSON at ../assets/data/ (correct for local dev,
+      # where dashboard/ sits next to assets/) with assets/data/ as a fallback.
+      # Once deployed, dashboard/ becomes the site root, so ../assets/data/
+      # would resolve outside the site -- bundle the data in at that fallback
+      # path so the deployed dashboard is self-contained.
+      - name: Bundle data into dashboard/
+        run: |
+          mkdir -p dashboard/assets/data
+          cp assets/data/*.json dashboard/assets/data/
+
+      - name: Deploy dashboard/ to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./assets
+          publish_dir: ./dashboard

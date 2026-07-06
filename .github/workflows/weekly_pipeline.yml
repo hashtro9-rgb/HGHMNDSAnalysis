@@ -1,0 +1,59 @@
+name: HGHMNDS Weekly Pipeline
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'   # Sunday 12:00 AM UTC = 8:00 AM PHT
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+      - run: pip install -r requirements.txt
+      - run: pip install playwright && playwright install chromium && playwright install-deps chromium
+      - name: Run pipeline
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: python scripts/run_pipeline.py
+
+      # script.js looks for JSON at ../assets/data/ (correct for local dev)
+      # with assets/data/ as a fallback -- bundle the data into dashboard/
+      # so the deployed site (dashboard/ as root) is self-contained. Same
+      # reasoning as deploy.yml.
+      - name: Bundle data into dashboard/
+        run: |
+          mkdir -p dashboard/assets/data
+          cp assets/data/*.json dashboard/assets/data/
+
+      - name: Commit outputs
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add assets/data/ logs/ data/cleaned/ dashboard/
+          git diff --staged --quiet || git commit -m "chore: weekly pipeline [$(date +%Y-%m-%d)]"
+          git push
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-log-${{ github.run_id }}
+          path: logs/
+          retention-days: 30

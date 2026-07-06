@@ -6,3 +6,7 @@ numpy
 jupyter
 nbconvert
 pytest
+playwright
+schedule
+python-dotenv
+beautifulsoup4

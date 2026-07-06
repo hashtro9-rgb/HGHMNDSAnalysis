@@ -1,10 +1,24 @@
 [
   {
     "category": "Accessories",
-    "count": 4,
-    "avg_price": 812.5,
-    "avg_rating": null,
-    "total_sold": 1087
+    "count": 8,
+    "avg_price": 513.12,
+    "avg_rating": 4.68,
+    "total_sold": 1096
+  },
+  {
+    "category": "Bottoms",
+    "count": 5,
+    "avg_price": 755.2,
+    "avg_rating": 4.95,
+    "total_sold": 19
+  },
+  {
+    "category": "Eyewear",
+    "count": 3,
+    "avg_price": 1156.67,
+    "avg_rating": 4.53,
+    "total_sold": 145
   },
   {
     "category": "Headwear",
@@ -35,18 +49,11 @@
     "total_sold": 396
   },
   {
-    "category": "Other",
-    "count": 102,
-    "avg_price": 627.9,
-    "avg_rating": 4.84,
-    "total_sold": 35542
-  },
-  {
     "category": "T-Shirt",
-    "count": 97,
-    "avg_price": 437.29,
-    "avg_rating": 4.67,
-    "total_sold": 4840
+    "count": 187,
+    "avg_price": 526.0,
+    "avg_rating": 4.75,
+    "total_sold": 40209
   },
   {
     "category": "Tanktop",

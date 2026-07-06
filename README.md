@@ -1,91 +1,98 @@
-# HGHMNDS Clothing Market Analysis
+# HGHMNDS Market Intelligence Dashboard
 
-## Project Overview
+## Overview
 
-An end-to-end data pipeline analyzing HGHMNDS Clothing's market presence across
-Shopee Philippines and Lazada Philippines. The pipeline scrapes product and
-review data, cleans and flags it (including third-party knockoff listings),
-runs exploratory data analysis, and exports the results as JSON for a
-dashboard.
+An end-to-end, automated pipeline that scrapes HGHMNDS Clothing's market
+presence across Shopee Philippines and Lazada Philippines, cleans and flags
+the data (including third-party knockoff listings), runs exploratory
+analysis, and serves the results as a live dashboard. A weekly GitHub Actions
+run rescrapes, diffs against the previous week, rebuilds the dashboard data,
+and emails a summary report — no manual intervention required.
+
+**Notable data caveat**: Shopee's public search API no longer exposes real
+"sold" counts (confirmed platform-side limitation, not a scraping bug), so
+`review_count`/`rating_avg` stand in as the Shopee engagement proxy wherever
+sales volume would otherwise be shown.
 
 ## Data Sources
 
 - **Shopee Philippines** — product listings, pricing, ratings, and reviews for
-  the HGHMNDS Clothing storefront and third-party sellers using the brand name.
-- **Lazada Philippines** — same, scraped separately since the two platforms
-  expose different fields (e.g. Shopee tracks 30-day sales, Lazada tracks
-  lifetime sales).
+  the HGHMNDS Clothing storefront and third-party sellers using the brand name,
+  via Shopee's internal JSON search/detail/review APIs.
+- **Lazada Philippines** — same, via headless Playwright browsing (search
+  cards + per-product detail pages), since Lazada exposes different fields
+  (e.g. lifetime sold count vs Shopee's 30-day figure) and no public JSON API
+  for search.
 
 Raw scrape output lives in `data/raw/` and is not committed to this repo (see
 `.gitignore`) — it is the untouched source of truth for the cleaning pipeline.
 
-## Folder Structure
+## Structure
 
 ```
 HGHMNDSAnalysis/
-├── .github/workflows/   CI: rerun pipeline + deploy assets/ to GitHub Pages
-├── assets/              Charts (PNG) and exported JSON for the dashboard
+├── .github/workflows/
+│   ├── deploy.yml            CI: rebuild assets/ from committed cleaned data, deploy to Pages
+│   └── weekly_pipeline.yml   Sunday cron: full scrape -> clean -> EDA -> export -> notify -> deploy
+├── assets/
+│   └── data/                 JSON exports consumed by the dashboard
+├── config/
+│   └── settings.py           Keywords, thresholds, paths, notification config
 ├── data/
-│   ├── raw/             Original scraped Excel (git-ignored, local only)
-│   └── cleaned/         Cleaned CSVs/Excel produced by scripts/01_clean.py
-├── docs/                Supplementary documentation
-├── notebooks/           Jupyter notebook walkthrough of the analysis
+│   ├── raw/                  Latest + timestamped raw scrapes (git-ignored)
+│   ├── cleaned/              Cleaned CSVs/Excel (committed, CI builds from these)
+│   └── archive/              Weekly snapshots of data/cleaned/, pruned to KEEP_WEEKS
+├── dashboard/
+│   ├── index.html            Dashboard shell (6 tabs)
+│   ├── style.css             Design system (dark, editorial streetwear aesthetic)
+│   └── script.js             Data loading, charts, filtering, interactions
+├── docs/                     Supplementary documentation
+├── logs/                     Pipeline run logs + fallback notification reports
+├── notebooks/                Jupyter walkthrough of the analysis
 ├── scripts/
-│   ├── 01_clean.py      Cleaning pipeline
-│   ├── 02_eda.py        Exploratory data analysis + charts
-│   └── 03_export_json.py Dashboard JSON export
-└── tests/               pytest checks on the cleaned data
+│   ├── 01_scrape.py          Headless scrape (Shopee API + Lazada Playwright) + weekly diff
+│   ├── 02_clean.py           Cleaning pipeline
+│   ├── 03_eda.py             Exploratory data analysis + charts
+│   ├── 04_export_json.py     Dashboard JSON export
+│   ├── 05_notify.py          Email summary report (Gmail SMTP)
+│   └── run_pipeline.py       Runs 01-05 in sequence, logs, archives, never crashes silently
+└── tests/                    pytest checks on cleaned data + pipeline artifacts
 ```
 
 ## How to Run
 
 ```bash
 pip install -r requirements.txt
+playwright install chromium
 
-python scripts/01_clean.py        # data/raw/*.xlsx -> data/cleaned/
-pytest tests/ -v                  # validate cleaned data
-python scripts/02_eda.py          # charts + printed analysis -> assets/
-python scripts/03_export_json.py  # dashboard JSON -> assets/data/
+python scripts/run_pipeline.py    # full pipeline: scrape -> clean -> EDA -> export -> notify
 ```
 
-To explore interactively, open `notebooks/hghmnds_analysis.ipynb`.
+Or run each stage independently:
 
-**Note on CI**: `data/raw/*.xlsx` is git-ignored (raw scrape data stays local),
-so `.github/workflows/deploy.yml` only runs `02_eda.py` and `03_export_json.py`
-against the committed `data/cleaned/*.csv` — it does not rerun `01_clean.py`.
-Whenever new raw data is scraped, run `01_clean.py` locally and commit the
-refreshed `data/cleaned/` files so CI has something current to build from.
+```bash
+python scripts/01_scrape.py         # data/raw/hghmnds_MERGED_[ts].xlsx + data/raw/latest.xlsx
+python scripts/02_clean.py          # data/raw/latest.xlsx -> data/cleaned/
+pytest tests/ -v                    # validate cleaned data + artifacts
+python scripts/03_eda.py            # charts + printed analysis -> assets/
+python scripts/04_export_json.py    # dashboard JSON -> assets/data/
+python scripts/05_notify.py         # email report (falls back to logs/report_*.txt)
+```
 
-## Key Findings
+Open `dashboard/index.html` in a browser to view the dashboard locally, or
+visit the live deployment below. To explore interactively, open
+`notebooks/hghmnds_analysis.ipynb`.
 
-- **Shopee lists at a premium but its sales-volume data is unusable.** Shopee's
-  median price (PHP 620) beats Lazada's (PHP 500), and Shopee products carry far
-  more reviews (1,431 vs 381) and a higher average rating (4.88 vs 4.40). However
-  `sold_final` is 0 across every Shopee listing — confirmed to be a genuine
-  platform limitation (Shopee's public search API no longer exposes real sold
-  counts, even in successful responses where other fields like `rating_avg` and
-  `review_count` are correctly populated and varied), not a scraping bug. Only
-  Lazada's `sold_lifetime` figures are usable for sales-volume analysis this run;
-  `review_count`/`rating_avg` stand in as the engagement proxy for Shopee.
-- **Lazada carries far more knockoff risk.** ~41% of Lazada listings are flagged
-  `is_suspicious` (discount > 80% or price under ₱250 — fake "original prices"
-  like ₱7,777 discounted to ₱199), versus ~10% on Shopee.
-- **"Other" is the largest category on both platforms** (53 Shopee, 49 Lazada)
-  because many product names (e.g. "AURORA - HGHMNDS", "HGHMNDS - DIAGRAM") don't
-  contain an explicit garment-type keyword — the classifier only matches literal
-  keywords (shirt/tee/hoodie/etc.), so abstractly-named products fall through.
-  Known limitation of this pipeline's simple keyword-based category rules.
-- **`is_authentic` is true for virtually all 221 listings** since it only checks
-  whether the product name mentions HGHMNDS/HIGHMINDS/HIGH MINDS — it doesn't by
-  itself separate the official store from resellers or knockoffs (`is_suspicious`
-  handles that).
-- **Ratings barely correlate with review volume** (Pearson r ≈ 0.19–0.20 on both
-  platforms) — popular items aren't systematically rated higher or lower than
-  niche ones.
-- **Reviews mix English and Filipino.** Word-frequency analysis on 1-star reviews
-  is dominated by Filipino function words (ng, sa, na, mga) since the stopword
-  list is English-only — negative reviews skew more Filipino-language than
-  5-star reviews. A bilingual stopword list would sharpen this analysis further.
+**Note on CI**: `data/raw/*.xlsx` is git-ignored (raw scrape data stays local
+outside of the weekly Actions run, which scrapes fresh and commits the
+resulting `data/cleaned/` itself). `deploy.yml` only rebuilds `assets/` from
+the already-committed `data/cleaned/*.csv` on every push to `main`.
+`weekly_pipeline.yml` runs the full scrape-to-notify pipeline every Sunday and
+commits the refreshed cleaned data, assets, and logs automatically.
+
+## Live Dashboard
+
+**https://hashtro9-rgb.github.io/HGHMNDSAnalysis/**
 
 ## Author
 
