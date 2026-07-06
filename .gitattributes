@@ -1,0 +1,8 @@
+# Cleaned review CSVs contain embedded literal newlines inside quoted
+# multi-line review_text fields (correct CSV: CRLF row separators, bare LF
+# as data content). Git's line-ending normalization can't tell the two apart
+# and corrupts the embedded ones on checkout when core.autocrlf=true,
+# silently changing review_text's byte length out from under the
+# already-computed review_length column. Disable line-ending conversion
+# entirely for these files so they round-trip byte-for-byte.
+*.csv -text
