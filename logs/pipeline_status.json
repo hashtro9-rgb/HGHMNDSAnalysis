@@ -1,0 +1,33 @@
+{
+  "run_date": "2026-07-06 03:59:16",
+  "runtime_seconds": 106.98003268241882,
+  "overall_status": "failure",
+  "steps": [
+    {
+      "name": "01_scrape.py",
+      "status": "success",
+      "duration": 102.42062616348267
+    },
+    {
+      "name": "02_clean.py",
+      "status": "success",
+      "duration": 0.46667051315307617
+    },
+    {
+      "name": "03_eda.py",
+      "status": "failed",
+      "duration": 2.055880069732666
+    },
+    {
+      "name": "04_export_json.py",
+      "status": "skipped",
+      "duration": 0
+    },
+    {
+      "name": "05_notify.py",
+      "status": "success",
+      "duration": 2.0346524715423584
+    }
+  ],
+  "log_file": "/home/runner/work/HGHMNDSAnalysis/HGHMNDSAnalysis/logs/pipeline_20260706_035731.log"
+}
