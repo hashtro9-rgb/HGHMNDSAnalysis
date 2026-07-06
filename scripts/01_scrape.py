@@ -40,6 +40,12 @@ PAGE_TIMEOUT_MS = 25000
 MAX_RETRIES = 3
 RETRY_WAIT = 5
 
+# Historically both platforms return 100+ products each when unblocked, and
+# 0 when anti-bot fully blocks the run (a real, observed failure mode on
+# hosted CI IPs). Treat a suspiciously empty combined result as a scrape
+# failure rather than committing empty data over a good existing dataset.
+MIN_TOTAL_PRODUCTS = 20
+
 LAZADA_STORE_URLS = [
     "https://www.lazada.com.ph/shop/hghmnds/",
     "https://www.lazada.com.ph/shop/hghmnds-clothing/",
@@ -690,6 +696,15 @@ async def main():
 
     print(f"\n[SUMMARY] Shopee: {len(shopee_p)} products / {len(shopee_r)} reviews")
     print(f"[SUMMARY] Lazada: {len(lazada_p)} products / {len(lazada_r)} reviews")
+
+    total = len(shopee_p) + len(lazada_p)
+    if total < MIN_TOTAL_PRODUCTS:
+        print(f"\n[FAIL] Only {total} total products found (both platforms combined) -- "
+              f"below the sanity floor of {MIN_TOTAL_PRODUCTS}. This almost always means "
+              f"anti-bot blocking, not a real empty catalog. Refusing to overwrite "
+              f"data/raw/latest.xlsx or generate a weekly diff from this run.")
+        sys.exit(1)
+
     save_excel(shopee_p, shopee_r, lazada_p, lazada_r)
 
 
