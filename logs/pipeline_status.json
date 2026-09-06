@@ -1,22 +1,22 @@
 {
-  "run_date": "2026-08-30 05:00:43",
-  "runtime_seconds": 1991.1640815734863,
+  "run_date": "2026-09-06 03:40:54",
+  "runtime_seconds": 105.72814011573792,
   "overall_status": "failure",
   "steps": [
     {
       "name": "01_scrape.py",
-      "status": "success",
-      "duration": 1984.4794969558716
+      "status": "failed",
+      "duration": 103.32089042663574
     },
     {
       "name": "02_clean.py",
-      "status": "success",
-      "duration": 0.47370409965515137
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "03_eda.py",
-      "status": "failed",
-      "duration": 1.9692072868347168
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "04_export_json.py",
@@ -26,8 +26,8 @@
     {
       "name": "05_notify.py",
       "status": "success",
-      "duration": 4.240010023117065
+      "duration": 2.405714750289917
     }
   ],
-  "log_file": "/home/runner/work/HGHMNDSAnalysis/HGHMNDSAnalysis/logs/pipeline_20260830_042736.log"
+  "log_file": "/home/runner/work/HGHMNDSAnalysis/HGHMNDSAnalysis/logs/pipeline_20260906_033911.log"
 }
