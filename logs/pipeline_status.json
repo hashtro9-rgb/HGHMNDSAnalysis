@@ -1,12 +1,12 @@
 {
-  "run_date": "2026-10-04 05:00:34",
-  "runtime_seconds": 105.71972680091858,
+  "run_date": "2026-10-11 04:50:47",
+  "runtime_seconds": 107.83193826675415,
   "overall_status": "failure",
   "steps": [
     {
       "name": "01_scrape.py",
       "status": "failed",
-      "duration": 103.1356475353241
+      "duration": 103.93834185600281
     },
     {
       "name": "02_clean.py",
@@ -26,8 +26,8 @@
     {
       "name": "05_notify.py",
       "status": "success",
-      "duration": 2.5816593170166016
+      "duration": 3.891808271408081
     }
   ],
-  "log_file": "/home/runner/work/HGHMNDSAnalysis/HGHMNDSAnalysis/logs/pipeline_20261004_045851.log"
+  "log_file": "/home/runner/work/HGHMNDSAnalysis/HGHMNDSAnalysis/logs/pipeline_20261011_044903.log"
 }
